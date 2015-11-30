@@ -31,8 +31,16 @@ for volume in volumes['Volumes']:
     
     # Check if Tags exist
     if 'Tags' in volume:
+
+        # Set volume name to volume id
+        volume_name = volume['VolumeId']
+
         # Loop all tags
         for tag in volume['Tags']:
+
+            # Assign correct volume name if we found one
+            if 'Name' in tag['Key']:
+                volume_name = tag['Value']
 
             # Do backups flag
             do_backup = False
@@ -44,33 +52,47 @@ for volume in volumes['Volumes']:
             if args.word in value:
                     # set to True as the word was found
                     do_backup = True
+                    break
 
         # Only print the message if --check is set
         if do_backup and args.check:
-            print("Check " + volume['VolumeId'] + ": '" + 
+            print("Check " + volume_name + ": '" + 
                     args.word + "' was found in tag, will create backup."
                 )
 
         # Create the snapshot otherwise
         elif do_backup:
             # Create snapshot
-            ec2.create_snapshot(
+            result = ec2.create_snapshot(
                     VolumeId=volume['VolumeId'],
                     Description='Scheduled Snapshot [' +
                                 volume['VolumeId'] +
                                 '] - ec2backup'
                 )
 
+            # Create tags
+            ec2.create_tags(
+                    Resources=[
+                        result['SnapshotId'],
+                        ],
+                    Tags=[
+                        {
+                            'Key': 'Name',
+                            'Value': 'ec2backup - ' + volume_name
+                        },
+                        
+                    ]
+                    )
 
-
-        # Print the message if --check is set
+        # Print the message if --check is set and no 'word' found
         elif args.check:
-            print("Check " + volume['VolumeId'] + ": '" + 
+            print("Check " + volume_name + ": '" + 
                     args.word + "' was NOT found in the tags, will NOT create backup."
                 )
 
+    # If no tags were found and --check is set
     elif args.check:
-        print("Check " + volume['VolumeId'] + 
+        print("Check " + volume_name + 
                 ": no tags were found. Will NOT create backup."
         )
 
