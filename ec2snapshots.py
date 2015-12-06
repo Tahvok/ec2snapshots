@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 from __future__ import print_function
 import argparse
+import datetime
 # Import Session from boto3
 from boto3.session import Session
 
@@ -17,7 +18,7 @@ class Volumes(object):
     def get_volumes(self):
         return self.volumes
 
-    def __get_backup_volumes(self, backup_word, volumes=None):
+    def get_backup_volumes(self, backup_word, volumes=None):
         if volumes is None:
             volumes = self.volumes
 
@@ -82,7 +83,7 @@ class Volumes(object):
 
     def run_backup(self, backup_word, backup_volumes=None):
         if backup_volumes is None:
-            backup_volumes = self.__get_backup_volumes(backup_word)
+            backup_volumes = self.get_backup_volumes(backup_word)
 
         if not self.check:
             for volume_id, volume_name in backup_volumes.iteritems():
@@ -110,12 +111,65 @@ class Volumes(object):
 
 
 class Snapshots(object):
-    def __init__(self, ec2, check):
-        self.volumes = Volumes(ec2, check)
+    def __init__(self, ec2, backup_volumes, check):
+        self.volumes = backup_volumes
 
-    def print_volumes(self):
-        return self.volumes.get_volumes()
+        self.ec2 = ec2
 
+        self.backup_snapshots = None
+        self.backup_snapshots = self.get_snapshots()
+
+        self.check = check
+
+    def get_snapshots(self):
+
+        if self.backup_snapshots:
+            return self.backup_snapshots
+
+        else:
+            snapshots_volume_ids = []
+
+            # print(self.volumes)
+
+            for volume in self.volumes.keys():
+                # print(volume)
+                snapshots_volume_ids.append(volume)
+
+            return self.ec2.describe_snapshots(
+                Filters=[
+                    {
+                        'Name': 'volume-id',
+                        'Values': snapshots_volume_ids
+                    }
+                ]
+            )
+
+    def delete_snapshots(self, days, snapshots=None):
+        # print(snapshots)
+
+        if snapshots is None:
+            snapshots = self.backup_snapshots
+
+        for snapshot in snapshots['Snapshots']:
+            snapshot_age = datetime.datetime.now().date() - \
+                           snapshot['StartTime'].date()
+            if days < snapshot_age.days:
+                if self.check:
+                    print('Snapshot', snapshot['SnapshotId'],
+                          'of volume id',
+                          snapshot['VolumeId'],
+                          'is', snapshot_age.days,
+                          'old, and is more than',
+                          days, 'days old. Will be removed.')
+                else:
+                    self.ec2.delete_snapshot(SnapshotId=snapshot['SnapshotId'])
+            else:
+                print('Snapshot', snapshot['SnapshotId'],
+                      'of volume id',
+                      snapshot['VolumeId'],
+                      'is', snapshot_age.days,
+                      'old, and is NOT more than',
+                      days, 'days old. Will NOT be removed.')
 
 # def delete_old_backup(ec2):
     # snapshots = ec2.describe_snapshots()
@@ -137,6 +191,9 @@ if '__main__' == __name__:
                         help="run in test mode", default=False)
     parser.add_argument("-w", "--word", type=str,
                         help="specify the word to search for", default='daily')
+    parser.add_argument("-d", "--days", type=int,
+                        help="specify days to preserve the snapshots",
+                        default=None)
     args = parser.parse_args()
 
     # Create a new Session with given profile
@@ -148,3 +205,11 @@ if '__main__' == __name__:
     my_volumes = Volumes(EC2, args.check)
 
     my_volumes.run_backup(args.word)
+
+    my_snapshots = Snapshots(EC2, my_volumes.get_backup_volumes(args.word),
+                             args.check)
+
+    my_snapshots.get_snapshots()
+
+    if args.days is not None:
+        my_snapshots.delete_snapshots(args.days)
