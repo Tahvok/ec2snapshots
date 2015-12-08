@@ -2,7 +2,9 @@
 Creates ec2 snapshots of volumes using keyword in tags, and deletes old snapshots
 
 # Requirements
-Python 2 symlinked to /usr/bin/python2 (should work with python 3 as well, but not tested)
+* Python 2 symlinked to /usr/bin/python2 (should work with python 3 as well, but not tested)
+* boto3
+* pytz
 
 # Argument defaults
     check = False
@@ -14,10 +16,12 @@ Python 2 symlinked to /usr/bin/python2 (should work with python 3 as well, but n
 # Install
     git clone https://github.com/Tahvok/ec2snapshots.git
 
-You need boto3 and pytz modules
+You need [boto3](https://github.com/boto/boto3) and [pytz](http://pytz.sourceforge.net) modules.
 You can install them with:
 
     pip install -r requirements.txt
+
+Configure boto3 according to: (https://boto3.readthedocs.org/en/latest/guide/quickstart.html#configuration)
 
 # Usage
 Create a snapshots using defaults above:
