@@ -21,7 +21,7 @@ You can install them with:
 
     pip install -r requirements.txt
 
-Configure boto3 according to: (https://boto3.readthedocs.org/en/latest/guide/quickstart.html#configuration)
+Configure boto3 according to: https://boto3.readthedocs.org/en/latest/guide/quickstart.html#configuration
 
 # Usage
 Create a snapshots using defaults above:
