@@ -81,6 +81,7 @@ class Volumes(object):
             volume_id = volume['VolumeId']
             volume_name = volume_id
 
+            # Search for volume name and assign if found
             for tag in volume['Tags']:
                 if 'Name' in tag['Key']:
                     volume_name = tag['Value']
