@@ -111,7 +111,7 @@ class Volumes(object):
 
             # Else print if --check is set
             else:
-                print(volume_id)
+                print(volume_name)
 
 
 class Snapshots(object):
