@@ -79,6 +79,11 @@ class Volumes(object):
         for volume in self.backup_volumes['Volumes']:
 
             volume_id = volume['VolumeId']
+            volume_name = volume_id
+
+            for tag in volume['Tags']:
+                if tag['Key'] is 'Name':
+                    volume_name = tag['Value']
 
             # If check is not set, will create snapshots
             if not self.check:
@@ -98,7 +103,7 @@ class Volumes(object):
                         Tags=[
                             {
                                 'Key': 'Name',
-                                'Value': 'ec2backup - ' + volume_id
+                                'Value': 'ec2backup - ' + volume_name
                             },
 
                         ]
