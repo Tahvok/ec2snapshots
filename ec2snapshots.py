@@ -82,7 +82,7 @@ class Volumes(object):
             volume_name = volume_id
 
             for tag in volume['Tags']:
-                if tag['Key'] is 'Name':
+                if 'Name' in tag['Key']:
                     volume_name = tag['Value']
 
             # If check is not set, will create snapshots
